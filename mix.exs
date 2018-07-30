@@ -15,9 +15,12 @@ defmodule MoneroAddress.MixProject do
       deps: deps(),
       name: "MoneroAddress",
       source_url: @source_url,
-      docs: [extras: ["README.md"], main: "readme",
-            source_ref: "v#{@version}",
-            source_url: @source_url]
+      docs: [
+        extras: ["README.md"],
+        main: "readme",
+        source_ref: "v#{@version}",
+        source_url: @source_url
+      ]
     ]
   end
 
@@ -30,7 +33,7 @@ defmodule MoneroAddress.MixProject do
   defp deps do
     [
       {:sha3, github: "puzza007/erlang-sha3", branch: "develop"},
-      {:ex_doc, "~> 0.19", only: :dev},
+      {:ex_doc, "~> 0.19", only: :dev}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
@@ -48,7 +51,7 @@ defmodule MoneroAddress.MixProject do
       files: ["lib", "mix.exs", ".formatter.exs", "README*", "LICENSE*"],
       maintainers: ["Łukasz Samson"],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url},
+      links: %{"GitHub" => @source_url}
     ]
   end
 end

@@ -27,18 +27,13 @@ defmodule MoneroAddress do
 
   @fullEncodedBlockSize 11
 
-  def decode58(code) when is_binary(code) do
-    decode58(to_charlist(code), 0)
-  end
-
-  def decode58(_code), do: raise(ArgumentError, "expects base58-encoded binary")
   defp decode58([], acc), do: acc
 
   defp decode58([c | code], acc) do
     decode58(code, acc * @b58base + do_decode58(c))
   end
 
-  def decode_block(block) do
+  defp decode_block(block) do
     decoded_bin = decode58(block, 0) |> :binary.encode_unsigned()
     size = byte_size(decoded_bin)
     needed_size = decoded_block_size(length(block))
@@ -54,7 +49,7 @@ defmodule MoneroAddress do
   end
 
   @doc """
-  Decodes Monero specyfic base58 encoded binary.
+  Decodes Monero specific base58 encoded binary.
 
   ## Examples
 
@@ -76,7 +71,7 @@ defmodule MoneroAddress do
 
   @doc """
   Decodes and validates Monero address. Returns tuple containing network prefix (encoded as integer),
-  public spend key (hex encoded) and public view key(hex encoded)
+  public spend key (hex encoded) and public view key (hex encoded)
 
   ## Examples
 
