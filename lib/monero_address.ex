@@ -20,6 +20,7 @@ defmodule MoneroAddress do
   @b58base 58
 
   encodedBlockSizes = Enum.with_index([0, 2, 3, 5, 6, 7, 9, 10, 11])
+
   for {size, index} <- encodedBlockSizes do
     defp decoded_block_size(unquote(size)), do: unquote(index)
   end
@@ -29,10 +30,12 @@ defmodule MoneroAddress do
   def decode58(code) when is_binary(code) do
     decode58(to_charlist(code), 0)
   end
+
   def decode58(_code), do: raise(ArgumentError, "expects base58-encoded binary")
   defp decode58([], acc), do: acc
-  defp decode58([c|code], acc) do
-    decode58(code, (acc * @b58base) + do_decode58(c))
+
+  defp decode58([c | code], acc) do
+    decode58(code, acc * @b58base + do_decode58(c))
   end
 
   def decode_block(block) do
@@ -40,11 +43,12 @@ defmodule MoneroAddress do
     size = byte_size(decoded_bin)
     needed_size = decoded_block_size(length(block))
 
-    padding = if size < needed_size do
-      for _ <- 1..(needed_size - size), into: <<>>, do: <<0>>
-    else
-      <<>>
-    end
+    padding =
+      if size < needed_size do
+        for _ <- 1..(needed_size - size), into: <<>>, do: <<0>>
+      else
+        <<>>
+      end
 
     padding <> decoded_bin
   end
@@ -61,11 +65,13 @@ defmodule MoneroAddress do
   def base58_decode!(code) when is_binary(code) do
     # this function differs from btc
     # split payload into blocks of 11 codepoints (8 bytes)
-    blocks = to_charlist(code)
-    |> Enum.chunk_every(@fullEncodedBlockSize)
+    blocks =
+      to_charlist(code)
+      |> Enum.chunk_every(@fullEncodedBlockSize)
 
     for block <- blocks, do: decode_block(block), into: <<>>
   end
+
   def base58_decode!(_code), do: raise(ArgumentError, "expects base58-encoded binary")
 
   @doc """
@@ -83,16 +89,20 @@ defmodule MoneroAddress do
   def decode_address!(code, network) do
     if String.length(code) != 95, do: raise(ArgumentError, "invalid length")
 
-    <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32), checksum::binary-size(4)>> = base58_decode!(code)
+    <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
+      checksum::binary-size(4)>> = base58_decode!(code)
 
     payload = prefix <> public_spend_key <> public_view_key
 
     unless checksum_valid?(payload, checksum), do: raise(ArgumentError, "checksum does not match")
 
     <<prefix_code>> = prefix
-    if prefix_code != network_prefix(network), do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
 
-    {prefix_code, public_spend_key |> Base.encode16(case: :lower), public_view_key |> Base.encode16(case: :lower)}
+    if prefix_code != network_prefix(network),
+      do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
+
+    {prefix_code, public_spend_key |> Base.encode16(case: :lower),
+     public_view_key |> Base.encode16(case: :lower)}
   end
 
   defp checksum_valid?(payload, checksum) do
