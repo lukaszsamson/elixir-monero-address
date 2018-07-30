@@ -1,0 +1,4 @@
+%{
+  "hex2bin": {:hex, :hex2bin, "1.0.0", "aac26eab998ae80eacee1c7607c629ab503ebf77a62b9242bae2b94d47dcb71e", [:rebar3], [], "hexpm"},
+  "sha3": {:git, "https://github.com/puzza007/erlang-sha3.git", "be3d418c5a48fa3d8a6d359092b3aea5989deb11", [branch: "develop"]},
+}
