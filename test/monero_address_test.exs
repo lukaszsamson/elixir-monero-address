@@ -29,13 +29,38 @@ defmodule MoneroAddressTest do
   end
 
   test "should decode valid integrated addresses" do
-    assert {54, psk, pvk, {:integrated, payment_id}} =
+    assert {54, psk, pvk, {:integrated_address, payment_id}} =
              "ABySz66nm1QUhPiwoAbR2tXU9LJu2U6fJjcsv3rxgkVRWU6tEYcn6C1NBc7wqCv5V7NW3zeYuzKf6RGGgZTFTpVC623BT1ptXvVU2GjR1B"
              |> MoneroAddress.decode_address!(:test)
 
-    assert psk == "ae7e136f46f618fe7f4a6b323ed60864c20070bf110978d7e3868686d5677318"
-    assert pvk == "2bf801cdaf3a8b41020098a6d5e194f48fa62129fe9d8f09d19fee9260665baa"
+    assert psk == "f0481b63cb937fa5960529247ebf6db627ff1b0bb88de9feccc3c504c16aa4b0"
+    assert pvk == "2c5ba76d22e48a7ea4ddabea3cce66808ba0cc91265371910f893962e977af1e"
     assert payment_id == "00000feedbadbeef"
+  end
+
+  test "should encode address" do
+    psk = "cd8235338c6d9a4b467d97d20e6ea309d3af16f845abf74b62b48d616ba00ff6"
+    pvk = "708dae560daacda2d39d0c0b5586edc92a0fa918f0a444ad7ae029ff1ae81185"
+
+    assert MoneroAddress.encode_address!(psk, pvk, :test, :address) ==
+             "9zxM5uUAZxDDbGPDtBBpga2eLKhuK5WWJDcLQ3brGwHpiDmro8TrXkpUEd5rHyZecCaeYen7rou6KW1ySfCvU69eG2Bmsiz"
+  end
+
+  test "should encode subaddress" do
+    psk = "ae7e136f46f618fe7f4a6b323ed60864c20070bf110978d7e3868686d5677318"
+    pvk = "2bf801cdaf3a8b41020098a6d5e194f48fa62129fe9d8f09d19fee9260665baa"
+
+    assert MoneroAddress.encode_address!(psk, pvk, :test, :subaddress) ==
+             "BenuGf8eyVhjZwdcxEJY1MHrUfqHjPvE3d7Pi4XY5vQz53VnVpB38bCBsf8AS5rJuZhuYrqdG9URc2eFoCNPwLXtLENT4R7"
+  end
+
+  test "should encode integrated address" do
+    psk = "f0481b63cb937fa5960529247ebf6db627ff1b0bb88de9feccc3c504c16aa4b0"
+    pvk = "2c5ba76d22e48a7ea4ddabea3cce66808ba0cc91265371910f893962e977af1e"
+    payment_id = "00000feedbadbeef"
+
+    assert MoneroAddress.encode_address!(psk, pvk, :test, {:integrated_address, payment_id}) ==
+             "ABySz66nm1QUhPiwoAbR2tXU9LJu2U6fJjcsv3rxgkVRWU6tEYcn6C1NBc7wqCv5V7NW3zeYuzKf6RGGgZTFTpVC623BT1ptXvVU2GjR1B"
   end
 
   test "too short" do

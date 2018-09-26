@@ -23,6 +23,7 @@ defmodule MoneroAddress do
 
   for {size, index} <- encodedBlockSizes do
     defp decoded_block_size(unquote(size)), do: unquote(index)
+    defp encoded_block_size(unquote(index)), do: unquote(size)
   end
 
   @fullEncodedBlockSize 11
@@ -48,6 +49,42 @@ defmodule MoneroAddress do
     padding <> decoded_bin
   end
 
+  # defp encode_block(block) do
+  #   needed_size = encoded_block_size(byte_size(block))
+
+  #   decoded_bin = decode58(block, 0) |> :binary.encode_unsigned()
+  #   size = byte_size(decoded_bin)
+  #   needed_size = decoded_block_size(length(block))
+
+  #   padding =
+  #     if size < needed_size do
+  #       for _ <- 1..(needed_size - size), into: <<>>, do: <<0>>
+  #     else
+  #       <<>>
+  #     end
+
+  #   padding <> decoded_bin
+  # end
+
+  def encode58(data) do
+    encoded_zeroes = convert_leading_zeroes(data, [])
+    integer = if is_binary(data), do: :binary.decode_unsigned(data), else: data
+    encode58(integer, [], encoded_zeroes)
+  end
+
+  defp encode58(0, acc, encoded_zeroes), do: to_string([encoded_zeroes | acc])
+
+  defp encode58(integer, acc, encoded_zeroes) do
+    encode58(div(integer, 58), [do_encode58(rem(integer, 58)) | acc], encoded_zeroes)
+  end
+
+  defp convert_leading_zeroes(<<0>> <> data, encoded_zeroes) do
+    encoded_zeroes = ['1' | encoded_zeroes]
+    convert_leading_zeroes(data, encoded_zeroes)
+  end
+
+  defp convert_leading_zeroes(_data, encoded_zeroes), do: encoded_zeroes
+
   @doc """
   Decodes Monero specific base58 encoded binary.
 
@@ -68,6 +105,45 @@ defmodule MoneroAddress do
   end
 
   def base58_decode!(_code), do: raise(ArgumentError, "expects base58-encoded binary")
+
+  defp split(data, acc) do
+    case data do
+      <<a::size(64), rest::binary>> ->
+        split(rest, acc ++ [a])
+
+      <<a::size(56)>> ->
+        acc ++ [a]
+
+      <<a::size(48)>> ->
+        acc ++ [a]
+
+      <<a::size(40)>> ->
+        acc ++ [a]
+
+      <<a::size(32)>> ->
+        acc ++ [a]
+
+      <<a::size(24)>> ->
+        acc ++ [a]
+
+      <<a::size(16)>> ->
+        acc ++ [a]
+
+      <<a::size(8)>> ->
+        acc ++ [a]
+
+      <<>> ->
+        acc
+    end
+  end
+
+  def base58_encode!(code) do
+    # this function differs from btc
+    # split payload into blocks of 11 codepoints (8 bytes)
+    blocks = split(code, [])
+
+    for block <- blocks, do: encode58(block), into: ""
+  end
 
   @doc """
   Decodes and validates Monero address. Returns tuple containing network prefix (encoded as integer),
@@ -100,11 +176,12 @@ defmodule MoneroAddress do
 
     <<prefix_code>> = prefix
 
-    type = cond do
-      prefix_code == network_prefix(network, :address) -> :address
-      prefix_code == network_prefix(network, :subaddress) -> :subaddress
-      true -> raise(ArgumentError, "invalid network prefix #{prefix_code}")
-    end
+    type =
+      cond do
+        prefix_code == network_prefix(network, :address) -> :address
+        prefix_code == network_prefix(network, :subaddress) -> :subaddress
+        true -> raise(ArgumentError, "invalid network prefix #{prefix_code}")
+      end
 
     {prefix_code, public_spend_key |> Base.encode16(case: :lower),
      public_view_key |> Base.encode16(case: :lower), type}
@@ -112,8 +189,7 @@ defmodule MoneroAddress do
 
   defp decode_integrated_v1_address!(code, network) do
     <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
-      payment_id::binary-size(32),
-      checksum::binary-size(4)>> = base58_decode!(code)
+      payment_id::binary-size(32), checksum::binary-size(4)>> = base58_decode!(code)
 
     payload = prefix <> public_spend_key <> public_view_key <> payment_id
 
@@ -125,13 +201,13 @@ defmodule MoneroAddress do
       do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
 
     {prefix_code, public_spend_key |> Base.encode16(case: :lower),
-     public_view_key |> Base.encode16(case: :lower), {:integrated, payment_id |> Base.encode16(case: :lower)}}
+     public_view_key |> Base.encode16(case: :lower),
+     {:integrated, payment_id |> Base.encode16(case: :lower)}}
   end
 
   defp decode_integrated_v2_address!(code, network) do
     <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
-      payment_id::binary-size(8),
-      checksum::binary-size(4)>> = base58_decode!(code)
+      payment_id::binary-size(8), checksum::binary-size(4)>> = base58_decode!(code)
 
     payload = prefix <> public_spend_key <> public_view_key <> payment_id
 
@@ -143,13 +219,19 @@ defmodule MoneroAddress do
       do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
 
     {prefix_code, public_spend_key |> Base.encode16(case: :lower),
-     public_view_key |> Base.encode16(case: :lower), {:integrated, payment_id |> Base.encode16(case: :lower)}}
+     public_view_key |> Base.encode16(case: :lower),
+     {:integrated_address, payment_id |> Base.encode16(case: :lower)}}
   end
 
   defp checksum_valid?(payload, checksum) do
+    prefix = compte_checksum(payload)
+    prefix == checksum
+  end
+
+  defp compte_checksum(payload) do
     # monero uses original keccak-256 not the NIST official sha3
     <<prefix::binary-size(4), _::binary-size(28)>> = :sha3.hash(256, payload)
-    prefix == checksum
+    prefix
   end
 
   defp network_prefix(:main, :address), do: 18
@@ -161,4 +243,58 @@ defmodule MoneroAddress do
   defp network_prefix(:test, :address), do: 53
   defp network_prefix(:test, :integrated_address), do: 54
   defp network_prefix(:test, :subaddress), do: 63
+
+  @doc """
+  Encodes public spend key, public view key and optionally payment id into base58 encoded address
+
+  ## Examples
+
+      iex> MoneroAddress.encode_address!("cd8235338c6d9a4b467d97d20e6ea309d3af16f845abf74b62b48d616ba00ff6", "708dae560daacda2d39d0c0b5586edc92a0fa918f0a444ad7ae029ff1ae81185", :test, :address)
+      "9zxM5uUAZxDDbGPDtBBpga2eLKhuK5WWJDcLQ3brGwHpiDmro8TrXkpUEd5rHyZecCaeYen7rou6KW1ySfCvU69eG2Bmsiz"
+
+  """
+  def encode_address!(public_spend_key, public_view_key, network, type)
+      when type in [:address, :subaddress] do
+    if String.length(public_spend_key) != 64,
+      do: raise(ArgumentError, "invalid public spend key length")
+
+    if String.length(public_view_key) != 64,
+      do: raise(ArgumentError, "invalid public view key length")
+
+    payload =
+      <<network_prefix(network, type)>> <>
+        Base.decode16!(public_spend_key, case: :lower) <>
+        Base.decode16!(public_view_key, case: :lower)
+
+    checksum = compte_checksum(payload)
+
+    (payload <> checksum)
+    |> base58_encode!()
+  end
+
+  def encode_address!(
+        public_spend_key,
+        public_view_key,
+        network,
+        {:integrated_address, payment_id}
+      ) do
+    if String.length(public_spend_key) != 64,
+      do: raise(ArgumentError, "invalid public spend key length")
+
+    if String.length(public_view_key) != 64,
+      do: raise(ArgumentError, "invalid public view key length")
+
+    if String.length(payment_id) not in [16, 64],
+      do: raise(ArgumentError, "invalid payment id length")
+
+    payload =
+      <<network_prefix(network, :integrated_address)>> <>
+        Base.decode16!(public_spend_key, case: :lower) <>
+        Base.decode16!(public_view_key, case: :lower) <> Base.decode16!(payment_id, case: :lower)
+
+    checksum = compte_checksum(payload)
+
+    (payload <> checksum)
+    |> base58_encode!()
+  end
 end

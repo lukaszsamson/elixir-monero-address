@@ -31,11 +31,12 @@ defmodule MoneroAddress.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    sha3_dep = unless Mix.env() == :publish do
-      {:sha3, github: "lukaszsamson/erlang-sha3", branch: "develop"}
-    else
-      {:sha3, "1.0.0"}
-    end
+    sha3_dep =
+      unless Mix.env() == :publish do
+        {:sha3, github: "lukaszsamson/erlang-sha3", branch: "develop"}
+      else
+        {:sha3, "1.0.0"}
+      end
 
     [
       sha3_dep,
