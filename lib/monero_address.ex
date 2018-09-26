@@ -78,12 +78,19 @@ defmodule MoneroAddress do
       iex> MoneroAddress.decode_address!("44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A", :main)
       {18,
              "42f18fc61586554095b0799b5c4b6f00cdeb26a93b20540d366932c6001617b7",
-             "5db35109fbba7d5f275fef4b9c49e0cc1c84b219ec6ff652fda54f89f7f63c88"}
+             "5db35109fbba7d5f275fef4b9c49e0cc1c84b219ec6ff652fda54f89f7f63c88", :address}
 
   """
   def decode_address!(code, network) do
-    if String.length(code) != 95, do: raise(ArgumentError, "invalid length")
+    case String.length(code) do
+      95 -> decode_simple_address!(code, network)
+      106 -> decode_integrated_v2_address!(code, network)
+      139 -> decode_integrated_v1_address!(code, network)
+      _ -> raise(ArgumentError, "invalid length")
+    end
+  end
 
+  defp decode_simple_address!(code, network) do
     <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
       checksum::binary-size(4)>> = base58_decode!(code)
 
@@ -93,11 +100,50 @@ defmodule MoneroAddress do
 
     <<prefix_code>> = prefix
 
-    if prefix_code != network_prefix(network),
+    type = cond do
+      prefix_code == network_prefix(network, :address) -> :address
+      prefix_code == network_prefix(network, :subaddress) -> :subaddress
+      true -> raise(ArgumentError, "invalid network prefix #{prefix_code}")
+    end
+
+    {prefix_code, public_spend_key |> Base.encode16(case: :lower),
+     public_view_key |> Base.encode16(case: :lower), type}
+  end
+
+  defp decode_integrated_v1_address!(code, network) do
+    <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
+      payment_id::binary-size(32),
+      checksum::binary-size(4)>> = base58_decode!(code)
+
+    payload = prefix <> public_spend_key <> public_view_key <> payment_id
+
+    unless checksum_valid?(payload, checksum), do: raise(ArgumentError, "checksum does not match")
+
+    <<prefix_code>> = prefix
+
+    if prefix_code != network_prefix(network, :integrated_address),
       do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
 
     {prefix_code, public_spend_key |> Base.encode16(case: :lower),
-     public_view_key |> Base.encode16(case: :lower)}
+     public_view_key |> Base.encode16(case: :lower), {:integrated, payment_id |> Base.encode16(case: :lower)}}
+  end
+
+  defp decode_integrated_v2_address!(code, network) do
+    <<prefix::binary-size(1), public_spend_key::binary-size(32), public_view_key::binary-size(32),
+      payment_id::binary-size(8),
+      checksum::binary-size(4)>> = base58_decode!(code)
+
+    payload = prefix <> public_spend_key <> public_view_key <> payment_id
+
+    unless checksum_valid?(payload, checksum), do: raise(ArgumentError, "checksum does not match")
+
+    <<prefix_code>> = prefix
+
+    if prefix_code != network_prefix(network, :integrated_address),
+      do: raise(ArgumentError, "invalid network prefix #{prefix_code}")
+
+    {prefix_code, public_spend_key |> Base.encode16(case: :lower),
+     public_view_key |> Base.encode16(case: :lower), {:integrated, payment_id |> Base.encode16(case: :lower)}}
   end
 
   defp checksum_valid?(payload, checksum) do
@@ -106,7 +152,13 @@ defmodule MoneroAddress do
     prefix == checksum
   end
 
-  defp network_prefix(:main), do: 18
-  defp network_prefix(:stage), do: 24
-  defp network_prefix(:test), do: 53
+  defp network_prefix(:main, :address), do: 18
+  defp network_prefix(:main, :integrated_address), do: 19
+  defp network_prefix(:main, :subaddress), do: 42
+  defp network_prefix(:stage, :address), do: 24
+  defp network_prefix(:stage, :integrated_address), do: 25
+  defp network_prefix(:stage, :subaddress), do: 36
+  defp network_prefix(:test, :address), do: 53
+  defp network_prefix(:test, :integrated_address), do: 54
+  defp network_prefix(:test, :subaddress), do: 63
 end
