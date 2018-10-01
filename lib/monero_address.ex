@@ -67,23 +67,22 @@ defmodule MoneroAddress do
   # end
 
   def encode58(data) do
-    encoded_zeroes = convert_leading_zeroes(data, [])
-    integer = if is_binary(data), do: :binary.decode_unsigned(data), else: data
-    encode58(integer, [], encoded_zeroes)
+    encoded = encode58(data |> elem(0), [])
+    desired_length = data |> elem(1) |> encoded_block_size()
+    diff = desired_length - String.length(encoded)
+    padding = if diff > 0 do
+      for _ <- 1..diff, into: "", do: "1"
+    else
+      ""
+    end
+    padding <> encoded
   end
 
-  defp encode58(0, acc, encoded_zeroes), do: to_string([encoded_zeroes | acc])
+  defp encode58(0, acc), do: to_string(acc)
 
-  defp encode58(integer, acc, encoded_zeroes) do
-    encode58(div(integer, 58), [do_encode58(rem(integer, 58)) | acc], encoded_zeroes)
+  defp encode58(integer, acc) do
+    encode58(div(integer, 58), [do_encode58(rem(integer, 58)) | acc])
   end
-
-  defp convert_leading_zeroes(<<0>> <> data, encoded_zeroes) do
-    encoded_zeroes = ['1' | encoded_zeroes]
-    convert_leading_zeroes(data, encoded_zeroes)
-  end
-
-  defp convert_leading_zeroes(_data, encoded_zeroes), do: encoded_zeroes
 
   @doc """
   Decodes Monero specific base58 encoded binary.
@@ -109,28 +108,28 @@ defmodule MoneroAddress do
   defp split(data, acc) do
     case data do
       <<a::size(64), rest::binary>> ->
-        split(rest, acc ++ [a])
+        split(rest, acc ++ [{a, 8}])
 
       <<a::size(56)>> ->
-        acc ++ [a]
+        acc ++ [{a, 7}]
 
       <<a::size(48)>> ->
-        acc ++ [a]
+        acc ++ [{a, 6}]
 
       <<a::size(40)>> ->
-        acc ++ [a]
+        acc ++ [{a, 5}]
 
       <<a::size(32)>> ->
-        acc ++ [a]
+        acc ++ [{a, 4}]
 
       <<a::size(24)>> ->
-        acc ++ [a]
+        acc ++ [{a, 3}]
 
       <<a::size(16)>> ->
-        acc ++ [a]
+        acc ++ [{a, 2}]
 
       <<a::size(8)>> ->
-        acc ++ [a]
+        acc ++ [{a, 1}]
 
       <<>> ->
         acc

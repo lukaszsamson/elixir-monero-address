@@ -63,6 +63,16 @@ defmodule MoneroAddressTest do
              "ABySz66nm1QUhPiwoAbR2tXU9LJu2U6fJjcsv3rxgkVRWU6tEYcn6C1NBc7wqCv5V7NW3zeYuzKf6RGGgZTFTpVC623BT1ptXvVU2GjR1B"
   end
 
+  test "should encode integrated address 2" do
+    psk = "cd8235338c6d9a4b467d97d20e6ea309d3af16f845abf74b62b48d616ba00ff6"
+    pvk = "708dae560daacda2d39d0c0b5586edc92a0fa918f0a444ad7ae029ff1ae81185"
+    payment_id = "7b32c4d571270003"
+
+    encoded = MoneroAddress.encode_address!(psk, pvk, :test, {:integrated_address, payment_id})
+
+    assert String.length(encoded) == 106
+  end
+
   test "too short" do
     error =
       assert_raise(ArgumentError, fn ->
