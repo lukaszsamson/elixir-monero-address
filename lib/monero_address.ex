@@ -224,11 +224,11 @@ defmodule MoneroAddress do
   end
 
   defp checksum_valid?(payload, checksum) do
-    prefix = compte_checksum(payload)
+    prefix = compute_checksum(payload)
     prefix == checksum
   end
 
-  defp compte_checksum(payload) do
+  defp compute_checksum(payload) do
     # monero uses original keccak-256 not the NIST official sha3
     <<prefix::binary-size(4), _::binary-size(28)>> = :sha3.hash(256, payload)
     prefix
@@ -266,7 +266,7 @@ defmodule MoneroAddress do
         Base.decode16!(public_spend_key, case: :lower) <>
         Base.decode16!(public_view_key, case: :lower)
 
-    checksum = compte_checksum(payload)
+    checksum = compute_checksum(payload)
 
     (payload <> checksum)
     |> base58_encode!()
@@ -292,7 +292,7 @@ defmodule MoneroAddress do
         Base.decode16!(public_spend_key, case: :lower) <>
         Base.decode16!(public_view_key, case: :lower) <> Base.decode16!(payment_id, case: :lower)
 
-    checksum = compte_checksum(payload)
+    checksum = compute_checksum(payload)
 
     (payload <> checksum)
     |> base58_encode!()
