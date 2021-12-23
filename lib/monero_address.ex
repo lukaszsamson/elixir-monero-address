@@ -229,7 +229,7 @@ defmodule MoneroAddress do
 
   defp compute_checksum(payload) do
     # monero uses original keccak-256 not the NIST official sha3
-    <<prefix::binary-size(4), _::binary-size(28)>> = :sha3.hash(256, payload)
+    <<prefix::binary-size(4), _::binary-size(28)>> = ExKeccak.hash_256(payload)
     prefix
   end
 
