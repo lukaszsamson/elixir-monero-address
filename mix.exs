@@ -31,15 +31,8 @@ defmodule MoneroAddress.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    sha3_dep =
-      unless Mix.env() == :publish do
-        {:sha3, github: "lukaszsamson/erlang-sha3", branch: "develop"}
-      else
-        {:sha3, "1.0.0"}
-      end
-
     [
-      sha3_dep,
+      {:ex_keccak, "~> 0.2.2"},
       {:ex_doc, "~> 0.19", only: :publish}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
