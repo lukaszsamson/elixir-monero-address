@@ -70,11 +70,14 @@ defmodule MoneroAddress do
     encoded = encode58(data |> elem(0), [])
     desired_length = data |> elem(1) |> encoded_block_size()
     diff = desired_length - String.length(encoded)
-    padding = if diff > 0 do
-      for _ <- 1..diff, into: "", do: "1"
-    else
-      ""
-    end
+
+    padding =
+      if diff > 0 do
+        for _ <- 1..diff, into: "", do: "1"
+      else
+        ""
+      end
+
     padding <> encoded
   end
 

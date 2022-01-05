@@ -1,14 +1,14 @@
 defmodule MoneroAddress.MixProject do
   use Mix.Project
 
-  @version "1.1.1"
+  @version "1.2.0"
   @source_url "https://github.com/lukaszsamson/elixir-monero-address"
 
   def project do
     [
       app: :monero_address,
       version: @version,
-      elixir: "~> 1.5",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
