@@ -8,7 +8,7 @@ defmodule MoneroAddress do
   does not use official SHA3 but original keccak-256.
   """
 
-  b58_alphabet = Enum.with_index('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz')
+  b58_alphabet = Enum.with_index(~c"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
   for {encoding, value} <- b58_alphabet do
     defp do_encode58(unquote(value)), do: unquote(encoding)
