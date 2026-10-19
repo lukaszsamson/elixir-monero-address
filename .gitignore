@@ -23,3 +23,4 @@ erl_crash.dump
 monero_address-*.tar
 
 .elixir_ls
+/priv/plts/
