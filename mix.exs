@@ -13,6 +13,7 @@ defmodule MoneroAddress.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
+      dialyzer: [plt_local_path: "priv/plts", plt_core_path: "priv/plts"],
       name: "MoneroAddress",
       source_url: @source_url,
       docs: [
@@ -32,6 +33,7 @@ defmodule MoneroAddress.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:spec_lint, "~> 0.1", only: [:dev, :test], runtime: false},
       {:ex_keccak, "~> 0.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
