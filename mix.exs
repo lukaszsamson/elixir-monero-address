@@ -32,6 +32,7 @@ defmodule MoneroAddress.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:spec_lint, "~> 0.1", only: [:dev, :test], runtime: false},
       {:ex_keccak, "~> 0.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
       # {:dep_from_hexpm, "~> 0.3.0"},
